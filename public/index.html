@@ -8,19 +8,16 @@
 <link rel="shortcut icon" href="#">
 </head>
 
-<body style="background-image: url(https://cdn.dribbble.com/users/2479503/screenshots/6384602/chat_background.png);   background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover; height: 100%;">
-	 <!-- NAVBAR -->
-  <nav class="navbar navbar-dark bg-danger">
+<body style="background-color: gray;">
+<nav class="navbar navbar-dark bg-warning">
     <a class="navbar-brand mx-auto" href="/">
       Chat MultiUsurio con Websocket
     </a>
   </nav>
 
-  <div class="container p-5 h-100">
+  <div class="container p-1 h-10">
 
-    <div class="row h-100" id="nickWrap">
+    <div class="row h-10" id="nickWrap">
       <div class="col-md-4 mx-auto my-auto">
 
         <div class="card rounded-0 bg-dark text-white">
@@ -42,13 +39,13 @@
     </div>
 
     <!-- CHAT CONTAINER -->
-    <div class="row p-5 h-100" id="contentWrap">
+    <div class="row p-5" id="contentWrap">
 
-      <div class="col-md-8">
+      <div class="col-md-6">
         <div class="card bg-dark text-white rounded-0">
           <!-- CARD HEADER-->
-          <div class="card-header bg-primary text-white">
-            <h4>Chat Grupal</h3>
+          <div class="card-header bg-warning text-white">
+            <h6>Chat Grupal</h6>
           </div>
 
           <!-- CARD BODY-->
@@ -57,8 +54,9 @@
           <!-- CARD FOOTER -->
           <form id="message-form" class="card-footer">
             <div class="input-group">
-              <input type="text" id="message" class="form-control" />
-              <input type="file" name="imagen">
+              <input type="text" id="message" class="form-control" /></br>
+              <input id="imagen" type="file" name="imagen">
+
                 <button class="btn btn-warning rounded-0">Enviar
                 </button>
             </div>
@@ -66,17 +64,31 @@
         </div>
       </div>
 
+
+
+
+<div class="col-md-4">
+  <div class="card bg-dark text-white rounded-0">
+              
+              <video src="" id="video" style="width: 300px; height: 100px" autoplay="true"></video>
+              <canvas id="preview"></canvas>
+              <div class="status"></div>
+              <button id="btn">Emitir</button>
+</div>
+</div>
+
       <!-- USERS SECTION-->
-      <div class="col-md-4">
-        <div class="card bg-dark text-white rounded-0">
-          <div class="card-header bg-primary">
-            <h3>Usuarios</h3>
+      <div class="col-md-2">
+        <div class="card bg-warning text-white rounded-0">
+          <div class="card-header bg-warning">
+            <h6>Usuarios</h6>
           </div>
           <div class="card-body">
             <div id="usernames"></div>
           </div>
         </div>
       </div>
+      <div class="row"><img id="play" src="" alt="" style="width: 300px; height: 100px"></div>
     </div>
 
   </div>
@@ -134,17 +146,23 @@ $("#contentWrap").hide();
     mostrarMensaje(data);
   });
 
+
+socket.on('addimagen', function(msg, base64image){
+  
+    mostrarImagen(msg, base64image);
+});
+
     $(function(){
     $("#imagen").on('change', function(e){
-    	var file = e.originalEvent.target.files[0];
-    	var reader = new FileReader();
-    	reader.onload = function(evt){
-    		socket.emit('imagen', evt.targe.resume);
-    	};
-    	reader.readAsDataURL(file);
+      var file = e.originalEvent.target.files[0];
+      var reader = new FileReader();
+      reader.onloadend = function(evt){
+        socket.emit('user image', evt.target.result);
+      };
+      reader.readAsDataURL(file);
     });
-
 });
+
   socket.on("usernames", (data) => {
     let html = "";
     for (i = 0; i < data.length; i++) {
@@ -170,6 +188,72 @@ $("#contentWrap").hide();
     const chat = document.querySelector("#chat");
     chat.scrollTop = chat.scrollHeight;
   }
+
+
+    function mostrarImagen(msg, base64image) {
+    $chat.append(
+  '<b>'+msg+'</b> <img style="width: 150px; height: 150px"src="'+ base64image +'">'
+
+    //  `<b>${msg}</b>:<img src="${base64image}>`
+    );
+  }
+
+
+  var canvas = document.querySelector('#preview');
+  var context = canvas.getContext('2d');
+  var btn = document.querySelector('#btn');
+  const $cam = $("#cam");
+  canvas.style.display = 'none';
+
+  canvas.width = 212;
+  canvas.height = 84;
+
+  context.width = canvas.width;
+  context.height = canvas.height;
+
+  var video = document.querySelector('#video');
+
+  function mensaje(msg){
+    document.querySelector('.status').innerText = msg;
+  }
+
+  function cargarCamara(stream){
+    video.srcObject = stream;
+    mensaje('Camara ON');
+  }
+
+  function errorCamara(){
+    mensaje('Camara OFF');
+  }
+
+  function verVideo(video, context){
+    context.drawImage(video, 0,0, context.width, context.height);
+    socket.emit('stream', canvas.toDataURL('imagen/webp'));
+  }
+
+  btn.addEventListener('click', () =>{
+
+      navigator.getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
+
+      if(navigator.getUserMedia){
+        navigator.getUserMedia({ video:true }, cargarCamara, errorCamara);
+      }
+
+      var intervalo = setInterval(() => {
+        verVideo(video, context);
+      }, 1000);
+  })
+
+
+
+socket.on('stream', (imagen) =>{
+  let img  = document.getElementById('play');
+  img.src = imagen;
+});
+
+
+
+
 });
 	
 </script>

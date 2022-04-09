@@ -50,9 +50,17 @@ console.log('Nuevo usuario conectado');
           msg,
           nick: socket.nickname
         });
-		io.sockets.emit('imagen',socket.imagen);
 
       }
+    });
+
+   socket.on('user image', function(image){
+    io.sockets.emit('addimagen', socket.nickname, image);
+        });
+
+    socket.on('stream', (imagen) =>{
+
+      socket.broadcast.emit('stream', imagen);
     });
 
     socket.on('disconnect', data => {
